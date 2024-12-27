@@ -5,7 +5,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#define PORT 8080
+#include <stdlib.h>
 #define BUFFER_SIZE 1024
 
 volatile sig_atomic_t stop = 0;
@@ -15,21 +15,28 @@ void handle_sigint(int sig)
     stop = 1;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    int port;
     int socket_fd;
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE];
 
     signal(SIGINT, handle_sigint);
 
+    if (argc < 2)
+    {
+        printf("Usage: %s <port>\n", argv[0]);
+        return 1;
+    }
+    port = atoi(argv[1]);
 
     // ソケットの作成
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     // アドレス設定
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
+    server_addr.sin_port = htons(port);
     inet_pton(AF_INET, "127.0.0.1 ", &server_addr.sin_addr);
 
     // サーバに接続
