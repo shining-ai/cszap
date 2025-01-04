@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 {
     int port;
     int socket_fd;
-    struct sockaddr_in server_addr;
+    struct sockaddr_in6 server_addr;
     char buffer[BUFFER_SIZE];
 
     signal(SIGINT, handle_sigint);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     port = atoi(argv[1]);
 
     // ソケットの作成
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
         perror("Error creating socket");
@@ -40,9 +40,10 @@ int main(int argc, char *argv[])
     }
 
     // アドレス設定
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0)
+    server_addr.sin6_family = AF_INET6;
+    server_addr.sin6_addr = in6addr_any;
+    server_addr.sin6_port = htons(port);
+    if (inet_pton(AF_INET6, "::1", &server_addr.sin6_addr) <= 0)
     {
         perror("Invalid IP address");
         close(socket_fd);
@@ -75,7 +76,6 @@ int main(int argc, char *argv[])
         }
 
         // サーバからのレスポンスを受け取る
-        // memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = recv(socket_fd, buffer, BUFFER_SIZE, 0);
         if (bytes_read < 0)
         {
