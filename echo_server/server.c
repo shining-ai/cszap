@@ -6,7 +6,6 @@
 #include <signal.h>
 #include <pthread.h>
 #include <stdlib.h>
-#define PORT 8080
 #define BUFFER_SIZE 1024
 volatile int client_num = 0;
 volatile sig_atomic_t server_running = 1;
@@ -42,14 +41,22 @@ void *handle_client(void *client_socket)
     client_num--;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    int port;
     int new_socket_fd;
     struct sockaddr_in6 server_addr, client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t addr_len = sizeof(client_addr);
 
     signal(SIGINT, handle_sigint);
+
+    if (argc < 2)
+    {
+        printf("Usage: %s <port番号>\n", argv[0]);
+        return 1;
+    }
+    port = atoi(argv[1]);
 
     // ソケットの作成
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
@@ -62,7 +69,7 @@ int main()
     // アドレス設定
     server_addr.sin6_family = AF_INET6;
     server_addr.sin6_addr = in6addr_any;
-    server_addr.sin6_port = htons(PORT);
+    server_addr.sin6_port = htons(port);
 
     // ソケットにアドレスをバインド
     if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
@@ -79,7 +86,7 @@ int main()
         close(socket_fd);
         return EXIT_FAILURE;
     }
-    printf("Echo server is running on port %d...\n", PORT);
+    printf("Echo server is running on port %d...\n", port);
 
     while (server_running)
     {
@@ -93,11 +100,11 @@ int main()
         printf("Client connected.\n");
         client_num++;
 
+        // クライアントを処理するスレッドを作成
         pthread_t tid;
         int *client_socket_fd = malloc(sizeof(int));
         *client_socket_fd = new_socket_fd;
         pthread_create(&tid, NULL, handle_client, client_socket_fd);
-
         pthread_detach(tid);
     }
 
