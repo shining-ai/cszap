@@ -8,11 +8,11 @@
 #include <stdlib.h>
 #define BUFFER_SIZE 1024
 
-volatile sig_atomic_t stop = 0;
+volatile sig_atomic_t running_client = 1;
 
 void handle_sigint(int sig)
 {
-    stop = 1;
+    running_client = 0;
 }
 
 int main(int argc, char *argv[])
@@ -43,17 +43,11 @@ int main(int argc, char *argv[])
     connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     printf("Connected to server.\n");
 
-    while (1)
+    while (running_client)
     {
         // ユーザーからの入力を受け取る
         printf("Enter message: ");
         fgets(buffer, BUFFER_SIZE, stdin);
-
-        if (stop)
-        {
-            printf("Exiting...\n");
-            break;
-        }
 
         // サーバにデータを送信
         send(socket_fd, buffer, strlen(buffer), 0);
@@ -62,11 +56,9 @@ int main(int argc, char *argv[])
         memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 
-
         printf("Received: %s", buffer);
     }
 
     // ソケットを閉じる
     close(socket_fd);
-
 }
