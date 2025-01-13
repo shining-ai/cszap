@@ -18,6 +18,7 @@ void handle_sigint(int sig)
 
 int main(int argc, char *argv[])
 {
+    char *ip_address;
     long port;
     int socket_fd;
     struct sockaddr_in6 server_addr;
@@ -35,14 +36,15 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (argc < 2)
+    if (argc < 3)
     {
-        printf("Usage: %s <port番号>\n", argv[0]);
+        printf("Usage: %s <IPアドレス> <port番号>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
+    ip_address = argv[1];
     errno = 0; // strtolのエラー判定のため初期化
-    port = strtol(argv[1], &strtol_endptr, 10);
+    port = strtol(argv[2], &strtol_endptr, 10);
     if (*strtol_endptr != '\0')
     {
         printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
@@ -66,9 +68,9 @@ int main(int argc, char *argv[])
     server_addr.sin6_family = AF_INET6;
     server_addr.sin6_addr = in6addr_any;
     server_addr.sin6_port = htons(port);
-    if (inet_pton(AF_INET6, "::1", &server_addr.sin6_addr) <= 0)
+    if (inet_pton(AF_INET6, ip_address, &server_addr.sin6_addr) <= 0)
     {
-        perror("Invalid IP address");
+        perror("Invalid IP address \n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
