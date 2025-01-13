@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <errno.h>
 #define BUFFER_SIZE 1024
 volatile int client_num = 0;
 volatile sig_atomic_t server_running = 1;
@@ -43,12 +44,13 @@ void *handle_client(void *client_socket)
 
 int main(int argc, char *argv[])
 {
-    int port;
+    long port;
     int new_socket_fd;
     struct sockaddr_in6 server_addr, client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t addr_len = sizeof(client_addr);
     struct sigaction sa;
+    char *strtol_endptr;
 
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = handle_sigint;
@@ -59,14 +61,23 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // signal(SIGINT, handle_sigint);
-
     if (argc < 2)
     {
         printf("Usage: %s <port番号>\n", argv[0]);
         return EXIT_FAILURE;
     }
-    port = atoi(argv[1]);
+    errno = 0; // strtolのエラー判定のため初期化
+    port = strtol(argv[1], &strtol_endptr, 10);
+    if (*strtol_endptr != '\0')
+    {
+        printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
+        return EXIT_FAILURE;
+    }
+    if (errno != ERANGE && !(0 <= port && port <= 65535))
+    {
+        printf("Port number must be between 1 and 65535.: %ld\n", port);
+        return EXIT_FAILURE;
+    }
 
     // ソケットの作成
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);

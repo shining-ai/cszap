@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <errno.h>
 #define BUFFER_SIZE 1024
 
 volatile sig_atomic_t running_client = 1;
@@ -17,11 +18,12 @@ void handle_sigint(int sig)
 
 int main(int argc, char *argv[])
 {
-    int port;
+    long port;
     int socket_fd;
     struct sockaddr_in6 server_addr;
     struct sigaction sa;
     char buffer[BUFFER_SIZE];
+    char *strtol_endptr;
 
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = handle_sigint;
@@ -36,9 +38,21 @@ int main(int argc, char *argv[])
     if (argc < 2)
     {
         printf("Usage: %s <port番号>\n", argv[0]);
-        return 1;
+        return EXIT_FAILURE;
     }
-    port = atoi(argv[1]);
+
+    errno = 0; // strtolのエラー判定のため初期化
+    port = strtol(argv[1], &strtol_endptr, 10);
+    if (*strtol_endptr != '\0')
+    {
+        printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
+        return EXIT_FAILURE;
+    }
+    if (errno != ERANGE && !(0 <= port && port <= 65535))
+    {
+        printf("Port number must be between 1 and 65535.: %ld\n", port);
+        return EXIT_FAILURE;
+    }
 
     // ソケットの作成
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
