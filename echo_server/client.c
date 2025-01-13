@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
         perror("sigaction");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (argc < 2)

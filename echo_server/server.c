@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
         perror("sigaction");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // signal(SIGINT, handle_sigint);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     if (argc < 2)
     {
         printf("Usage: %s <port番号>\n", argv[0]);
-        return 1;
+        return EXIT_FAILURE;
     }
     port = atoi(argv[1]);
 
