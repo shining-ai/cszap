@@ -20,9 +20,18 @@ int main(int argc, char *argv[])
     int port;
     int socket_fd;
     struct sockaddr_in6 server_addr;
+    struct sigaction sa;
     char buffer[BUFFER_SIZE];
 
-    signal(SIGINT, handle_sigint);
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = handle_sigint;
+    sa.sa_flags = 0;
+
+    if (sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        return 1;
+    }
 
     if (argc < 2)
     {

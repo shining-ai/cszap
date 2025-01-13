@@ -48,8 +48,18 @@ int main(int argc, char *argv[])
     struct sockaddr_in6 server_addr, client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t addr_len = sizeof(client_addr);
+    struct sigaction sa;
 
-    signal(SIGINT, handle_sigint);
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = handle_sigint;
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        return 1;
+    }
+
+    // signal(SIGINT, handle_sigint);
 
     if (argc < 2)
     {
