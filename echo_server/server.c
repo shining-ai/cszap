@@ -52,7 +52,6 @@ int main(int argc, char *argv[])
     long port;
     int new_socket_fd;
     struct sockaddr_in6 server_addr, client_addr;
-    char buffer[BUFFER_SIZE];
     socklen_t addr_len = sizeof(client_addr);
     struct sigaction sa;
     char *strtol_endptr;
