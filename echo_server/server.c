@@ -1,13 +1,13 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/socket.h>
 #include <netdb.h>
-#include <string.h>
-#include <signal.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
-#define BUFFER_SIZE 1024
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "utils.h"
+#define BUFFER_SIZE 1024
 volatile int client_num = 0;
 volatile sig_atomic_t server_running = 1;
 int socket_fd;
@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
     {
         return EXIT_FAILURE;
     }
-
 
     // ソケットの作成
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
