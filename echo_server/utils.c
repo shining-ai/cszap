@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
+#include <errno.h>
+#include <stdlib.h>
 
 int send_all(int socket_fd, char *buffer, int length)
 {
@@ -39,4 +41,22 @@ int recv_all(int socket_fd, char *buffer, int length)
     }
 
     return total_received;
+}
+
+int valid_port(const char *port_str, long *port)
+{
+    char *strtol_endptr;
+    *port = strtol(port_str, &strtol_endptr, 10);
+    errno = 0;
+    if (*strtol_endptr != '\0')
+    {
+        printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
+        return -1;
+    }
+    if (errno != ERANGE && !(0 <= *port && *port <= 65535))
+    {
+        printf("Port number must be between 0 and 65535.: %ln\n", port);
+        return -1;
+    }
+    return 0;
 }

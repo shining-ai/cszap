@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <errno.h>
 #define BUFFER_SIZE 1024
 #include "utils.h"
 
@@ -25,7 +24,6 @@ int main(int argc, char *argv[])
     struct sockaddr_in6 server_addr;
     struct sigaction sa;
     char buffer[BUFFER_SIZE];
-    char *strtol_endptr;
 
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = handle_sigint;
@@ -44,16 +42,8 @@ int main(int argc, char *argv[])
     }
 
     ip_address = argv[1];
-    errno = 0; // strtolのエラー判定のため初期化
-    port = strtol(argv[2], &strtol_endptr, 10);
-    if (*strtol_endptr != '\0')
+    if (valid_port(argv[2], &port) != 0)
     {
-        printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
-        return EXIT_FAILURE;
-    }
-    if (errno != ERANGE && !(0 <= port && port <= 65535))
-    {
-        printf("Port number must be between 0 and 65535.: %ld\n", port);
         return EXIT_FAILURE;
     }
 
