@@ -45,6 +45,7 @@ void *handle_client(void *client_socket)
         }
     }
     client_num--;
+    return NULL;
 }
 
 int main(int argc, char *argv[])
