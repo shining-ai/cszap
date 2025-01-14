@@ -23,13 +23,13 @@ void *handle_client(void *client_socket)
     int client_socket_fd = *(int *)client_socket;
     free(client_socket);
     char buffer[BUFFER_SIZE];
-    ssize_t bytes_read;
+    ssize_t bytes_received;
 
     while (1)
     {
         memset(buffer, 0, BUFFER_SIZE);
-        bytes_read = read(client_socket_fd, buffer, BUFFER_SIZE);
-        if (bytes_read <= 0)
+        bytes_received = recv(client_socket_fd, buffer, BUFFER_SIZE, 0);
+        if (bytes_received <= 0)
         {
             printf("Client disconnected.\n");
             break;
@@ -37,7 +37,7 @@ void *handle_client(void *client_socket)
 
         printf("Received: %s", buffer);
         // クライアントにデータを送り返す
-        if (send_all(client_socket_fd, buffer, bytes_read) != bytes_read)
+        if (send_all(client_socket_fd, buffer, bytes_received) != bytes_received)
         {
             perror("Error sending data");
             break;
