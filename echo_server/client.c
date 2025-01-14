@@ -15,7 +15,7 @@ int send_all(int socket_fd, char *buffer, int length)
 {
     int total_sent = 0;
     int bytes_remain = length;
-    int bytes_sent;
+    ssize_t bytes_sent;
 
     while (total_sent < length)
     {
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
         }
 
         // サーバからのレスポンスを受け取る
-        int bytes_read = recv(socket_fd, buffer, BUFFER_SIZE, 0);
+        ssize_t bytes_read = recv(socket_fd, buffer, BUFFER_SIZE, 0);
         if (bytes_read < 0)
         {
             perror("Error receiving data");

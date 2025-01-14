@@ -16,7 +16,7 @@ int send_all(int socket_fd, char *buffer, int length)
 {
     int total_sent = 0;
     int bytes_remain = length;
-    int bytes_sent;
+    ssize_t bytes_sent;
 
     while (total_sent < length)
     {
@@ -43,7 +43,7 @@ void *handle_client(void *client_socket)
     int client_socket_fd = *(int *)client_socket;
     free(client_socket);
     char buffer[BUFFER_SIZE];
-    int bytes_read;
+    ssize_t bytes_read;
 
     while (1)
     {
