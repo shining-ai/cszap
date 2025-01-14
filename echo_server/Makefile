@@ -19,11 +19,11 @@ $(TARGET_CLIENT): $(OBJS_CLIENT)
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm -f $(OBJS_SERVER) $(OBJS_CLIENT)
+	$(RM) $(OBJS_SERVER) $(OBJS_CLIENT)
 
 fclean: clean
-	rm -f $(TARGET_SERVER) $(TARGET_CLIENT)
+	$(RM) $(TARGET_SERVER) $(TARGET_CLIENT)
 
 re: fclean all
 
-.PHONY: all clean
+.PHONY: all clean fclean re
