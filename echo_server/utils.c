@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/socket.h>
 
 int send_all(int socket_fd, char *buffer, int length)
 {
