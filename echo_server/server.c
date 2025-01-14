@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
     struct sockaddr_in6 server_addr, client_addr;
     socklen_t addr_len = sizeof(client_addr);
     struct sigaction sa;
-    // char *strtol_endptr;
 
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = handle_sigint;
