@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     }
     if (errno != ERANGE && !(0 <= port && port <= 65535))
     {
-        printf("Port number must be between 1 and 65535.: %ld\n", port);
+        printf("Port number must be between 0 and 65535.: %ld\n", port);
         return EXIT_FAILURE;
     }
 
