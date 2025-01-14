@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall
-SRCS_SERVER = server.c
-SRCS_CLIENT = client.c
+SRCS_SERVER = server.c utils.c
+SRCS_CLIENT = client.c utils.c
 OBJS_SERVER = $(SRCS_SERVER:.c=.o)
 OBJS_CLIENT = $(SRCS_CLIENT:.c=.o)
 TARGET_SERVER = server
