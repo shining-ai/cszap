@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
         close(socket_fd);
         return EXIT_FAILURE;
     }
-    printf("Echo server is running on port %d...\n", port);
+    printf("Echo server is running on port %ld...\n", port);
 
     while (server_running)
     {
