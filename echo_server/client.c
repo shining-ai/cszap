@@ -92,8 +92,7 @@ int main(int argc, char *argv[])
         }
 
         // サーバからのレスポンスを受け取る
-        ssize_t bytes_read = recv(socket_fd, buffer, BUFFER_SIZE, 0);
-        if (bytes_read < 0)
+        if (recv_all(socket_fd, buffer, strlen(buffer)) < 0)
         {
             perror("Error receiving data");
             break;
