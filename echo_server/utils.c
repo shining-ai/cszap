@@ -74,3 +74,15 @@ int valid_port(const char *port_str, int *port)
     *port = (int)parsed_port;
     return 0;
 }
+
+int create_socket()
+{
+    int socket_fd;
+    socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        perror("Error creating socket /n");
+        return -1;
+    }
+    return socket_fd;
+}

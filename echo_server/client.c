@@ -48,10 +48,9 @@ int main(int argc, char *argv[])
     }
 
     // ソケットの作成
-    socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
+    socket_fd = create_socket();
     if (socket_fd < 0)
     {
-        perror("Error creating socket \n");
         return EXIT_FAILURE;
     }
 
