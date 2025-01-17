@@ -49,7 +49,7 @@ void *handle_client(void *client_socket)
 
 int main(int argc, char *argv[])
 {
-    long port;
+    int port;
     int new_socket_fd;
     struct sockaddr_in6 server_addr, client_addr;
     socklen_t addr_len = sizeof(client_addr);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
         close(socket_fd);
         return EXIT_FAILURE;
     }
-    printf("Echo server is running on port %ld...\n", port);
+    printf("Echo server is running on port %d...\n", port);
 
     while (server_running)
     {

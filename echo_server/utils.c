@@ -45,20 +45,21 @@ int recv_all(int socket_fd, char *buffer, int length)
     return total_received;
 }
 
-int valid_port(const char *port_str, long *port)
+int valid_port(const char *port_str, int *port)
 {
     char *strtol_endptr;
-    *port = strtol(port_str, &strtol_endptr, 10);
+    long parsed_port = strtol(port_str, &strtol_endptr, 10);
     errno = 0;
     if (*strtol_endptr != '\0')
     {
         printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
         return -1;
     }
-    if (errno != ERANGE && !(PORT_MIN <= *port && *port <= PORT_MAX))
+    if (errno != ERANGE && !(PORT_MIN <= parsed_port && parsed_port <= PORT_MAX))
     {
-        printf("Port number must be between %d and %d.: %ln\n", PORT_MIN, PORT_MAX, port);
+        printf("Port number must be between %d and %d.: %ld\n", PORT_MIN, PORT_MAX, parsed_port);
         return -1;
     }
+    *port = (int)parsed_port;
     return 0;
 }

@@ -19,7 +19,7 @@ void handle_sigint(int sig)
 int main(int argc, char *argv[])
 {
     char *ip_address;
-    long port;
+    int port;
     int socket_fd;
     struct sockaddr_in6 server_addr;
     struct sigaction sa;
