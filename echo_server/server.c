@@ -29,15 +29,18 @@ void *handle_client(void *client_socket)
 
     while (1)
     {
-        bytes_received = recv(client_socket_fd, buffer, BUFFER_SIZE-1, 0);
-        if (bytes_received <= 0)
+        bytes_received = recv_with_error_handling(client_socket_fd, buffer, BUFFER_SIZE);
+        if (bytes_received < 0)
         {
-            puts("Client disconnected.");
             break;
         }
-        buffer[bytes_received] = '\0';
-
+        if (bytes_received == 0)
+        {
+            puts("temporarily error, retrying...");
+            continue;
+        }
         printf("Received: %s", buffer);
+
         // クライアントにデータを送り返す
         if (send_all(client_socket_fd, buffer, bytes_received) != bytes_received)
         {

@@ -29,6 +29,28 @@ int send_all(int socket_fd, char *buffer, int length)
     return total_sent;
 }
 
+ssize_t recv_with_error_handling(int socket_fd, char *buffer, int buffer_size)
+{
+    ssize_t bytes_received;
+    bytes_received = recv(socket_fd, buffer, buffer_size - 1, 0);
+    if (bytes_received == -1)
+    {
+        if (errno == EINTR)
+        {
+            return 0;
+        }
+        perror("Error receiving data /n");
+        return -1;
+    }
+    if (bytes_received == 0)
+    {
+        puts("Connection closed by peer.");
+        return -1;
+    }
+    buffer[bytes_received] = '\0';
+    return bytes_received;
+}
+
 int recv_all(int socket_fd, char *buffer, int length)
 {
     int total_received = 0;
