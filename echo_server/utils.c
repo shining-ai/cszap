@@ -25,7 +25,7 @@ int send_all(int socket_fd, char *buffer, size_t length)
     return total_sent;
 }
 
-ssize_t recv_with_error_handling(int socket_fd, char *buffer, int buffer_size)
+ssize_t recv_with_error_handling(int socket_fd, char *buffer, size_t buffer_size)
 {
     ssize_t bytes_received;
     bytes_received = recv(socket_fd, buffer, buffer_size - 1, 0);
