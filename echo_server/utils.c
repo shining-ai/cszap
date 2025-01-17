@@ -38,6 +38,13 @@ int recv_all(int socket_fd, char *buffer, int length)
         {
             break;
         }
+        // 相手からコネクションを切られた場合に無限ループを防ぐ
+        else if (bytes_received == 0)
+        {
+            puts("Connection closed by peer.");
+            return -1;
+        }
+
         total_received += bytes_received;
         bytes_remain -= bytes_received;
     }
