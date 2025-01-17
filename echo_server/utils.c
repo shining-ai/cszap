@@ -5,7 +5,7 @@
 #define PORT_MIN 0
 #define PORT_MAX 65535
 
-int send_all(int socket_fd, char *buffer, size_t length)
+size_t send_all(int socket_fd, char *buffer, size_t length)
 {
     size_t total_sent = 0;
     ssize_t bytes_sent;
@@ -47,28 +47,23 @@ ssize_t recv_with_error_handling(int socket_fd, char *buffer, size_t buffer_size
     return bytes_received;
 }
 
-int recv_all(int socket_fd, char *buffer, int length)
+ssize_t recv_all(int socket_fd, char *buffer, size_t length)
 {
-    int total_received = 0;
-    int bytes_remain = length;
+    size_t total_received = 0;
     ssize_t bytes_received;
 
     while (total_received < length)
     {
-        bytes_received = recv(socket_fd, buffer + total_received, bytes_remain, 0);
-        if (bytes_received == -1)
+        bytes_received = recv_with_error_handling(socket_fd, buffer + total_received, length - total_received);
+        if (bytes_received < 0)
         {
             break;
         }
-        // 相手からコネクションを切られた場合に無限ループを防ぐ
-        else if (bytes_received == 0)
+        if (bytes_received == 0)
         {
-            puts("Connection closed by peer.");
-            return -1;
+            continue;
         }
-
         total_received += bytes_received;
-        bytes_remain -= bytes_received;
     }
 
     return total_received;
