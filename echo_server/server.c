@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <netdb.h>
 #include <pthread.h>
 #include <signal.h>
@@ -112,8 +113,14 @@ int main(int argc, char *argv[])
         new_socket_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_len);
         if (new_socket_fd < 0)
         {
+            if (errno == EINTR)
+            {
+                perror("Temporary error, retrying... /n");
+                continue;
+            }
+            // 重大なエラーの場合は終了
             perror("Error accepting failed /n");
-            continue;
+            break;
         }
         puts("Client connected.");
         client_num++;
