@@ -40,7 +40,7 @@ void *handle_client(void *client_socket)
         // クライアントにデータを送り返す
         if (send_all(client_socket_fd, buffer, bytes_received) != bytes_received)
         {
-            perror("Error sending data");
+            perror("Error sending data /n");
             break;
         }
     }
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     sa.sa_flags = 0;
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
-        perror("sigaction");
+        perror("sigaction failed /n");
         return EXIT_FAILURE;
     }
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("Error creating socket");
+        perror("Error creating socket /n");
         return EXIT_FAILURE;
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     // ソケットにアドレスをバインド
     if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
-        perror("Error binding socket");
+        perror("Error binding socket /n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     // クライアントからの接続を待ち受け
     if (listen(socket_fd, 1) < 0)
     {
-        perror("Error listening");
+        perror("Error listening /n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
         new_socket_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_len);
         if (new_socket_fd < 0)
         {
-            perror("Error accepting failed");
+            perror("Error accepting failed /n");
             continue;
         }
         puts("Client connected.");

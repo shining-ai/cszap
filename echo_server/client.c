@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
-        perror("sigaction");
+        perror("sigaction failed \n");
         return EXIT_FAILURE;
     }
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("Error creating socket");
+        perror("Error creating socket \n");
         return EXIT_FAILURE;
     }
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     // サーバに接続
     if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
-        perror("Error connecting to server");
+        perror("Error connecting to server \n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     while (running_client)
     {
         // ユーザーからの入力を受け取る
-        puts("Enter message: ");
+        fputs("Enter message: ", stdout);
         if (fgets(buffer, BUFFER_SIZE, stdin) == NULL)
         {
             break;
@@ -87,14 +87,14 @@ int main(int argc, char *argv[])
         // サーバにデータを送信
         if (send_all(socket_fd, buffer, strlen(buffer)) != strlen(buffer))
         {
-            perror("Error sending data");
+            perror("Error sending data \n");
             break;
         }
 
         // サーバからのレスポンスを受け取る
         if (recv_all(socket_fd, buffer, strlen(buffer)) < 0)
         {
-            perror("Error receiving data");
+            perror("Error receiving data \n");
             break;
         }
         printf("Received: %s", buffer);
