@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 #include "utils.h"
 #define BUFFER_SIZE 1024
@@ -127,12 +128,14 @@ int main(int argc, char *argv[])
 
     // 新規のクライアント接続を停止
     puts("Prepare server server stop...");
-    int weight_seconds = 10;
-    while (client_num > 0 && weight_seconds > 0)
+    int weight_seconds = 3;
+    time_t current_time = time(NULL);
+    time_t end_time = current_time + weight_seconds;
+    while (client_num > 0 && current_time < end_time)
     {
         printf("Waiting for %d clients to disconnect...\n", client_num);
+        current_time = time(NULL);
         sleep(1);
-        weight_seconds--;
     }
 
     if (client_num > 0)
