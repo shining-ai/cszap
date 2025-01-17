@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
     // 新規のクライアント接続を停止
     puts("Prepare server server stop...");
-    int weight_seconds = 3;
+    time_t weight_seconds = 3;
     time_t current_time = time(NULL);
     time_t end_time = current_time + weight_seconds;
     while (client_num > 0 && current_time < end_time)
