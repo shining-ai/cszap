@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <stdlib.h>
+#define PORT_MIN 0
+#define PORT_MAX 65535
 
 int send_all(int socket_fd, char *buffer, int length)
 {
@@ -53,9 +55,9 @@ int valid_port(const char *port_str, long *port)
         printf(" Invalid port number. Please enter a numeric value.: %s\n", strtol_endptr);
         return -1;
     }
-    if (errno != ERANGE && !(0 <= *port && *port <= 65535))
+    if (errno != ERANGE && !(PORT_MIN <= *port && *port <= PORT_MAX))
     {
-        printf("Port number must be between 0 and 65535.: %ln\n", port);
+        printf("Port number must be between %d and %d.: %ln\n", PORT_MIN, PORT_MAX, port);
         return -1;
     }
     return 0;
