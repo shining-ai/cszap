@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     }
 
     // クライアントからの接続を待ち受け
-    if (listen(socket_fd, 1) < 0)
+    if (listen(socket_fd, 50) < 0)
     {
         perror("Error listening /n");
         close(socket_fd);
