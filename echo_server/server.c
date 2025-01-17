@@ -31,7 +31,7 @@ void *handle_client(void *client_socket)
         bytes_received = recv(client_socket_fd, buffer, BUFFER_SIZE, 0);
         if (bytes_received <= 0)
         {
-            printf("Client disconnected.\n");
+            puts("Client disconnected.");
             break;
         }
 
@@ -107,14 +107,14 @@ int main(int argc, char *argv[])
 
     while (server_running)
     {
-        printf("Waiting for client...\n");
+        puts("Waiting for client...");
         new_socket_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &addr_len);
         if (new_socket_fd < 0)
         {
             perror("Error accepting failed");
             continue;
         }
-        printf("Client connected.\n");
+        puts("Client connected.");
         client_num++;
 
         // クライアントを処理するスレッドを作成
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     }
 
     // 新規のクライアント接続を停止
-    printf("Prepare server server stop...\n");
+    puts("Prepare server server stop...");
     int weight_seconds = 10;
     while (client_num > 0 && weight_seconds > 0)
     {
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
     if (client_num > 0)
     {
-        printf("Timeout. Force closing all clients...\n");
+        puts("Timeout. Force closing all clients...");
     }
 
     // ソケットを閉じる

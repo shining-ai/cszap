@@ -73,12 +73,12 @@ int main(int argc, char *argv[])
         close(socket_fd);
         return EXIT_FAILURE;
     }
-    printf("Connected to server.\n");
+    puts("Connected to server.");
 
     while (running_client)
     {
         // ユーザーからの入力を受け取る
-        printf("Enter message: ");
+        puts("Enter message: ");
         if (fgets(buffer, BUFFER_SIZE, stdin) == NULL)
         {
             break;
