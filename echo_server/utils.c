@@ -16,6 +16,10 @@ int send_all(int socket_fd, char *buffer, int length)
         bytes_sent = send(socket_fd, buffer + total_sent, bytes_remain, 0);
         if (bytes_sent == -1)
         {
+            if (errno == EINTR)
+            {
+                continue;
+            }
             break;
         }
         total_sent += bytes_sent;
