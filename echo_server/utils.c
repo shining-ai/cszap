@@ -5,16 +5,14 @@
 #define PORT_MIN 0
 #define PORT_MAX 65535
 
-int send_all(int socket_fd, char *buffer, int length)
+int send_all(int socket_fd, char *buffer, size_t length)
 {
-    int total_sent = 0;
-    int bytes_remain = length;
+    size_t total_sent = 0;
     ssize_t bytes_sent;
-
     while (total_sent < length)
     {
-        bytes_sent = send(socket_fd, buffer + total_sent, bytes_remain, 0);
-        if (bytes_sent == -1)
+        bytes_sent = send(socket_fd, buffer + total_sent, length - total_sent, 0);
+        if (bytes_sent < 0)
         {
             if (errno == EINTR)
             {
@@ -23,9 +21,7 @@ int send_all(int socket_fd, char *buffer, int length)
             break;
         }
         total_sent += bytes_sent;
-        bytes_remain -= bytes_sent;
     }
-
     return total_sent;
 }
 
