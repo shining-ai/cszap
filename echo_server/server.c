@@ -29,13 +29,13 @@ void *handle_client(void *client_socket)
 
     while (1)
     {
-        memset(buffer, 0, BUFFER_SIZE);
-        bytes_received = recv(client_socket_fd, buffer, BUFFER_SIZE, 0);
+        bytes_received = recv(client_socket_fd, buffer, BUFFER_SIZE-1, 0);
         if (bytes_received <= 0)
         {
             puts("Client disconnected.");
             break;
         }
+        buffer[bytes_received] = '\0';
 
         printf("Received: %s", buffer);
         // クライアントにデータを送り返す
