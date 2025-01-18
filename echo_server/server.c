@@ -30,7 +30,7 @@ void *handle_client(void *client_socket)
 
     while (1)
     {
-        bytes_received = recv_with_error_handling(client_socket_fd, buffer, BUFFER_SIZE);
+        bytes_received = recv_with_error_handling(client_socket_fd, buffer, BUFFER_SIZE - 1);
         if (bytes_received < 0)
         {
             break;
@@ -40,6 +40,7 @@ void *handle_client(void *client_socket)
             puts("temporarily error, retrying...");
             continue;
         }
+        buffer[bytes_received] = '\0';
         printf("Received: %s", buffer);
 
         // クライアントにデータを送り返す
