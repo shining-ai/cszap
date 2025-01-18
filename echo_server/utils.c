@@ -35,7 +35,7 @@ ssize_t recv_with_error_handling(int socket_fd, char *buffer, size_t buffer_size
         {
             return 0;
         }
-        perror("Error receiving data /n");
+        perror("Error receiving data \n");
         return -1;
     }
     if (bytes_received == 0)
@@ -94,7 +94,7 @@ int create_socket()
     socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("Error creating socket /n");
+        perror("Error creating socket \n");
         return -1;
     }
     return socket_fd;

@@ -45,7 +45,7 @@ void *handle_client(void *client_socket)
         // クライアントにデータを送り返す
         if (send_all(client_socket_fd, buffer, bytes_received) != bytes_received)
         {
-            perror("Error sending data /n");
+            perror("Error sending data \n");
             break;
         }
     }
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     sa.sa_flags = 0;
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
-        perror("sigaction failed /n");
+        perror("sigaction failed \n");
         return EXIT_FAILURE;
     }
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     // ソケットにアドレスをバインド
     if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
-        perror("Error binding socket /n");
+        perror("Error binding socket \n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     // クライアントからの接続を待ち受け
     if (listen(socket_fd, 50) < 0)
     {
-        perror("Error listening /n");
+        perror("Error listening \n");
         close(socket_fd);
         return EXIT_FAILURE;
     }
@@ -121,11 +121,11 @@ int main(int argc, char *argv[])
         {
             if (errno == EINTR)
             {
-                perror("Temporary error, retrying... /n");
+                perror("Temporary error, retrying... \n");
                 continue;
             }
             // 重大なエラーの場合は終了
-            perror("Error accepting failed /n");
+            perror("Error accepting failed \n");
             break;
         }
         puts("Client connected.");
@@ -136,21 +136,21 @@ int main(int argc, char *argv[])
         int *client_socket_fd = malloc(sizeof(int));
         if (client_socket_fd == NULL)
         {
-            perror("Error allocating memory /n");
+            perror("Error allocating memory \n");
             close(new_socket_fd);
             continue;
         }
         *client_socket_fd = new_socket_fd;
         if (pthread_create(&tid, NULL, handle_client, client_socket_fd) != 0)
         {
-            perror("Error creating thread /n");
+            perror("Error creating thread \n");
             free(client_socket_fd);
             close(new_socket_fd);
             continue;
         }
         if (pthread_detach(tid) != 0)
         {
-            perror("Error detaching thread /n");
+            perror("Error detaching thread \n");
         }
     }
 
