@@ -130,9 +130,24 @@ int main(int argc, char *argv[])
         // クライアントを処理するスレッドを作成
         pthread_t tid;
         int *client_socket_fd = malloc(sizeof(int));
+        if (client_socket_fd == NULL)
+        {
+            perror("Error allocating memory /n");
+            close(new_socket_fd);
+            continue;
+        }
         *client_socket_fd = new_socket_fd;
-        pthread_create(&tid, NULL, handle_client, client_socket_fd);
-        pthread_detach(tid);
+        if (pthread_create(&tid, NULL, handle_client, client_socket_fd) != 0)
+        {
+            perror("Error creating thread /n");
+            free(client_socket_fd);
+            close(new_socket_fd);
+            continue;
+        }
+        if (pthread_detach(tid) != 0)
+        {
+            perror("Error detaching thread /n");
+        }
     }
 
     // 新規のクライアント接続を停止
