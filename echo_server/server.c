@@ -10,7 +10,8 @@
 #include <unistd.h>
 #include "utils.h"
 #define BUFFER_SIZE 1024
-volatile int client_num = 0;
+int client_num = 0;
+pthread_mutex_t client_num_mutex = PTHREAD_MUTEX_INITIALIZER;
 volatile sig_atomic_t server_running = 1;
 int socket_fd;
 
@@ -48,7 +49,10 @@ void *handle_client(void *client_socket)
             break;
         }
     }
+    close(client_socket_fd);
+    pthread_mutex_lock(&client_num_mutex);
     client_num--;
+    pthread_mutex_unlock(&client_num_mutex);
     return NULL;
 }
 
@@ -71,7 +75,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-        printf("Usage: %s <port番号>\n", argv[0]);
+        printf("Usage: %s <port番号> \n", argv[0]);
         return EXIT_FAILURE;
     }
 
