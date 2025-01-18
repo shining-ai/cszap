@@ -1,0 +1,104 @@
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include "utils.h"
+#define BUFFER_SIZE 1024
+
+volatile sig_atomic_t running_client = 1;
+
+void handle_sigint(int sig)
+{
+    running_client = 0;
+}
+
+int main(int argc, char *argv[])
+{
+    char *ip_address;
+    int port;
+    int socket_fd;
+    struct sockaddr_in6 server_addr;
+    struct sigaction sa;
+    char buffer[BUFFER_SIZE];
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = handle_sigint;
+    sa.sa_flags = 0;
+
+    if (sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        perror("sigaction failed \n");
+        return EXIT_FAILURE;
+    }
+
+    if (argc < 3)
+    {
+        printf("Usage: %s <IPアドレス> <port番号>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    ip_address = argv[1];
+    if (valid_port(argv[2], &port) != 0)
+    {
+        return EXIT_FAILURE;
+    }
+
+    // ソケットの作成
+    socket_fd = create_socket();
+    if (socket_fd < 0)
+    {
+        return EXIT_FAILURE;
+    }
+
+    // アドレス設定
+    server_addr.sin6_family = AF_INET6;
+    server_addr.sin6_addr = in6addr_any;
+    server_addr.sin6_port = htons(port);
+    if (inet_pton(AF_INET6, ip_address, &server_addr.sin6_addr) <= 0)
+    {
+        perror("Invalid IP address \n");
+        close(socket_fd);
+        return EXIT_FAILURE;
+    }
+
+    // サーバに接続
+    if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
+        perror("Error connecting to server \n");
+        close(socket_fd);
+        return EXIT_FAILURE;
+    }
+    puts("Connected to server.");
+
+    while (running_client)
+    {
+        // ユーザーからの入力を受け取る
+        fputs("Enter message: ", stdout);
+        if (fgets(buffer, BUFFER_SIZE, stdin) == NULL)
+        {
+            break;
+        }
+
+        // サーバにデータを送信
+        if (send_all(socket_fd, buffer, strlen(buffer)) != strlen(buffer))
+        {
+            perror("Error sending data \n");
+            break;
+        }
+
+        // サーバからのレスポンスを受け取る
+        if (recv_all(socket_fd, buffer, strlen(buffer)) < 0)
+        {
+            perror("Error receiving data \n");
+            break;
+        }
+        printf("Received: %s", buffer);
+    }
+
+    // ソケットを閉じる
+    close(socket_fd);
+}
