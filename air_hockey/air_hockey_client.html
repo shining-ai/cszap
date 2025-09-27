@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>座標デバッグ表示</title>
+  <style>
+    canvas {
+      background: #111;
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>座標デバッグ</h1>
+
+  <p>自分の座標: <span id="mycoords">まだ何も送っていません</span></p>
+  <p>相手の座標: <span id="othercoords">まだ何も受信していません</span></p>
+  <p>パックの座標: <span id="puckcoords">まだ何も受信していません</span></p>
+
+  <h2>エアホッケーのゲーム画面</h2>
+  <canvas id="game" width="600" height="400"></canvas>
+
+  <!-- Socket.io CDN -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io("http://localhost:3000"); // サーバのURLに合わせて変更
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    // デバッグ用座標表示
+    const myCoordsEl = document.getElementById("mycoords");
+    const otherCoordsEl = document.getElementById("othercoords");
+    const puckCoordsEl = document.getElementById("puckcoords");
+
+    // オブジェクトの初期状態
+    //let myPaddle = { x: 300, y: 350, radius: 20, color: "green" };
+    //let otherPaddle = { x: 300, y: 50, radius: 20, color: "red" };
+    //let puck = { x: 300, y: 200, radius: 10, color: "white" }
+    let players = {};
+    let puck = { x: 300, y: 200 };
+
+
+    // マウスの位置を取得して送信
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect(); // Canvasの座標系に変換
+      myPaddle.x = e.clientX - rect.left;
+      myPaddle.y = e.clientY - rect.top;
+      // 自分の座標を表示
+      myCoordsEl.textContent = `x: ${myPaddle.x}, y: ${myPaddle.y}`;
+      // サーバに送信
+      socket.emit("player", { x: myPaddle.x, y: myPaddle.y });
+    });
+
+    // マウスの位置をサーバに送る
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      // 自分の座標を表示
+      myCoordsEl.textContent = `x: ${x}, y: ${y}`;
+      // サーバに送信
+      socket.emit("playerMove", { x, y });
+    });
+
+    // 相手の座標を受信
+    //socket.on("move", (data) => {
+    //  otherPaddle.x = data.x;
+    //  otherPaddle.y = data.y;
+    //  otherCoordsEl.textContent = `x: ${data.x}, y: ${data.y}`;
+    //});
+
+    // サーバから全状態を受信
+    socket.on("state", (data) => {
+      players = data.players;
+      puck = data.puck;
+    });
+
+    // パックの座標を受信
+    //socket.on("puck", (data) => {
+    //  puck.x = data.x
+    //  puck.y = data.y
+    //  puckCoordsEl.textContent = `x: ${data.x}, y: ${data.y}, vx: ${data.vx}, vy: ${data.vy}`;
+    //})
+
+    // 描画関数
+    function drawCircle(x, y, r, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    //function drawCircle(obj) {
+    //  ctx.beginPath();
+    //  ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+    //  ctx.fillStyle = obj.color;
+    //  ctx.fill();
+    //}
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // プレイヤーを描画
+      for (const id in players) {
+        const p = players[id];
+        drawCircle(p.x, p.y, 20, id === socket.id ? "green" : "red");
+      }
+
+      // パックを描画
+      drawCircle(puck.x, puck.y, 10, "white");
+
+
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+
+  </script>
+</body>
+
+</html>
