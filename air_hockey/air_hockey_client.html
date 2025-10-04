@@ -1,125 +1,154 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
-  <title>座標デバッグ表示</title>
+  <title>エアホッケー</title>
   <style>
+    body {
+      background: #222;
+      color: #eee;
+      text-align: center;
+      font-family: sans-serif;
+    }
     canvas {
       background: #111;
       display: block;
       margin: 0 auto;
+      border: 2px solid #555;
+    }
+    #scoreboard {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+    .flash {
+      animation: flash 0.4s ease;
+    }
+    @keyframes flash {
+      0% { background-color: rgba(255, 255, 255, 0.5); }
+      100% { background-color: transparent; }
     }
   </style>
 </head>
-
 <body>
-  <h1>座標デバッグ</h1>
+  <h1>エアホッケー</h1>
 
-  <p>自分の座標: <span id="mycoords">まだ何も送っていません</span></p>
-  <p>相手の座標: <span id="othercoords">まだ何も受信していません</span></p>
-  <p>パックの座標: <span id="puckcoords">まだ何も受信していません</span></p>
+  <div id="scoreboard">
+    🔵 <span id="scoreTop">0</span> - <span id="scoreBottom">0</span> 🔴
+  </div>
 
-  <h2>エアホッケーのゲーム画面</h2>
+  <p>自分の座標: <span id="mycoords">未送信</span></p>
+  <p>パックの座標: <span id="puckcoords">未受信</span></p>
+
   <canvas id="game" width="600" height="400"></canvas>
 
-  <!-- Socket.io CDN -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    const socket = io("http://localhost:3000"); // サーバのURLに合わせて変更
+    // ---- 接続設定 ----
+    const socket = io("http://localhost:3000");
+    // const socket = io("https://air-hockey-6fvd.onrender.com");
 
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-
-    // デバッグ用座標表示
     const myCoordsEl = document.getElementById("mycoords");
-    const otherCoordsEl = document.getElementById("othercoords");
     const puckCoordsEl = document.getElementById("puckcoords");
+    const scoreTopEl = document.getElementById("scoreTop");
+    const scoreBottomEl = document.getElementById("scoreBottom");
 
-    // オブジェクトの初期状態
-    //let myPaddle = { x: 300, y: 350, radius: 20, color: "green" };
-    //let otherPaddle = { x: 300, y: 50, radius: 20, color: "red" };
-    //let puck = { x: 300, y: 200, radius: 10, color: "white" }
     let players = {};
     let puck = { x: 300, y: 200 };
+    let myPos = { x: 300, y: 350 };
+    let score = { top: 0, bottom: 0 };
 
+    // ---- 定数 ----
+    const GOAL_WIDTH = 200;
+    const GOAL_HEIGHT = 10;
+    const GOAL_OFFSET_X = (canvas.width - GOAL_WIDTH) / 2;
 
-    // マウスの位置を取得して送信
-    canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect(); // Canvasの座標系に変換
-      myPaddle.x = e.clientX - rect.left;
-      myPaddle.y = e.clientY - rect.top;
-      // 自分の座標を表示
-      myCoordsEl.textContent = `x: ${myPaddle.x}, y: ${myPaddle.y}`;
-      // サーバに送信
-      socket.emit("player", { x: myPaddle.x, y: myPaddle.y });
-    });
-
-    // マウスの位置をサーバに送る
+    // ---- マウス移動送信 ----
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // 自分の座標を表示
-      myCoordsEl.textContent = `x: ${x}, y: ${y}`;
-      // サーバに送信
+      myPos.x = x;
+      myPos.y = y;
+      myCoordsEl.textContent = `x: ${x.toFixed(1)}, y: ${y.toFixed(1)}`;
       socket.emit("playerMove", { x, y });
     });
 
-    // 相手の座標を受信
-    //socket.on("move", (data) => {
-    //  otherPaddle.x = data.x;
-    //  otherPaddle.y = data.y;
-    //  otherCoordsEl.textContent = `x: ${data.x}, y: ${data.y}`;
-    //});
-
-    // サーバから全状態を受信
+    // ---- サーバから状態を受信 ----
     socket.on("state", (data) => {
       players = data.players;
       puck = data.puck;
+      if (data.score) {
+        if (data.score.top !== score.top || data.score.bottom !== score.bottom) {
+          flashScore();
+        }
+        score = data.score;
+        scoreTopEl.textContent = data.score.top;
+        scoreBottomEl.textContent = data.score.bottom;
+      }
     });
 
-    // パックの座標を受信
-    //socket.on("puck", (data) => {
-    //  puck.x = data.x
-    //  puck.y = data.y
-    //  puckCoordsEl.textContent = `x: ${data.x}, y: ${data.y}, vx: ${data.vx}, vy: ${data.vy}`;
-    //})
+    // ---- 得点エフェクト ----
+    function flashScore() {
+      document.body.classList.add("flash");
+      setTimeout(() => document.body.classList.remove("flash"), 400);
+    }
 
-    // 描画関数
+    // ---- 円描画 ----
     function drawCircle(x, y, r, color) {
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
     }
-    //function drawCircle(obj) {
-    //  ctx.beginPath();
-    //  ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
-    //  ctx.fillStyle = obj.color;
-    //  ctx.fill();
-    //}
 
+    // ---- メイン描画 ----
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // プレイヤーを描画
+      // 中央ライン
+      ctx.strokeStyle = "#333";
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      // ゴールエリア
+      ctx.fillStyle = "rgba(0, 100, 255, 0.15)";
+      ctx.fillRect(GOAL_OFFSET_X, 0, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.fillStyle = "rgba(255, 50, 50, 0.15)";
+      ctx.fillRect(GOAL_OFFSET_X, canvas.height - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+
+      // ゴール枠線
+      ctx.strokeStyle = "rgba(0, 150, 255, 0.6)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(GOAL_OFFSET_X, 0, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.strokeStyle = "rgba(255, 80, 80, 0.6)";
+      ctx.strokeRect(GOAL_OFFSET_X, canvas.height - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+
+      // プレイヤー描画
       for (const id in players) {
         const p = players[id];
-        drawCircle(p.x, p.y, 20, id === socket.id ? "green" : "red");
+        if (!p) continue;
+        if (id === socket.id) {
+          drawCircle(p.x, p.y, 30, "blue");
+        } else {
+          drawCircle(p.x, p.y, 30, "red");
+        }
       }
 
-      // パックを描画
+      // 自分のマウス位置（レスポンス確認用）
+      drawCircle(myPos.x, myPos.y, 30, "lime");
+
+      // パック描画
       drawCircle(puck.x, puck.y, 10, "white");
-
-
+      puckCoordsEl.textContent = `x: ${puck.x.toFixed(1)}, y: ${puck.y.toFixed(1)}`;
 
       requestAnimationFrame(draw);
     }
+
     draw();
-
-
   </script>
 </body>
-
 </html>
