@@ -20,7 +20,6 @@ const WALL_THICK = 200 // 壁の厚み
 // エンジンとワールド
 const engine = Matter.Engine.create();
 const world = engine.world;
-
 engine.gravity.y = 0; // 縦方向の重力を0に
 
 // 壁（フィールドの周囲）
@@ -45,6 +44,22 @@ Matter.World.add(world, puck);
 
 // 全プレイヤーの位置を保持
 const players = {}; // {socket.id: {x,y}}
+
+
+// ゴール
+const GOAL_WIDTH = 200;
+const GOAL_DEPTH = 10;
+
+const goals = {
+    top: Matter.Bodies.rectangle(WIDTH / 2, -GOAL_DEPTH / 2, GOAL_WIDTH, GOAL_DEPTH, { isSensor: true, isStatic: true }),
+    bottom: Matter.Bodies.rectangle(WIDTH / 2, HEIGHT + GOAL_DEPTH / 2, GOAL_WIDTH, GOAL_DEPTH, { isSensor: true, isStatic: true })
+};
+Matter.World.add(world, [goals.top, goals.bottom]);
+
+
+// スコア
+const score = { top: 0, bottom: 0 };
+
 
 // サーバのルートにアクセスしたら簡単なメッセージ
 app.get("/", (req, res) => {
@@ -122,6 +137,28 @@ io.on("connection", (socket) => {
 });
 
 
+// 衝突判定（ゴール）
+Matter.Events.on(engine, "collisionStart", (event) => {
+    for (const pair of event.pairs) {
+        if (pair.bodyA === puck || pair.bodyB === puck) {
+            if (pair.bodyA === goals.top || pair.bodyB === goals.top) {
+                score.bottom += 1;
+                resetPuck();
+            } else if (pair.bodyA === goals.bottom || pair.bodyB === goals.bottom) {
+                score.top += 1;
+                resetPuck();
+            }
+        }
+    }
+});
+
+function resetPuck() {
+    Matter.Body.setPosition(puck, { x: WIDTH / 2, y: HEIGHT / 2 });
+    Matter.Body.setVelocity(puck, { x: 0, y: 0 });
+}
+
+
+
 // ----- パックの物理演算（サーバ側で毎フレーム更新）-----
 setInterval(() => {
     // Matter.Engine.update(engine, 1000 / 60);
@@ -139,7 +176,8 @@ setInterval(() => {
 
     io.emit("state", {
         players: playersState,
-        puck: { x: puck.position.x, y: puck.position.y }
+        puck: { x: puck.position.x, y: puck.position.y },
+        score
     });
 }, 1000 / 60);
 
