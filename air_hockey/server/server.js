@@ -11,12 +11,7 @@ const io = new Server(server, {
     cors: { origin: "*" } // 身内公開なら簡単にするため全許可
 });
 
-const PORT = process.env.PORT || 3000;
-
-const { WIDTH, HEIGHT } = constants; // フィールド幅, 高さ
-const PUCK_RADIUS = constants.PUCK_RADIUS;  // パック半径
-const PLAYER_RADIUS = constants.PLAYER_RADIUS; // マレットの大きさ
-const WALL_THICK = constants.WALL_THICK // 壁の厚み
+const { WIDTH, HEIGHT, WALL_THICK } = constants; // フィールド幅, 高さ, 壁の厚み
 
 // エンジンとワールド
 const engine = Matter.Engine.create();
@@ -33,7 +28,7 @@ const walls = [
 Matter.World.add(world, walls);
 
 // パック状態(初期位置と初期速度)
-const puck = Matter.Bodies.circle(300, 200, PUCK_RADIUS, {
+const puck = Matter.Bodies.circle(300, 200, constants.PUCK_RADIUS, {
     restitution: 0.9, // 反発係数
     friction: 0, // 面との摩擦
     frictionAir: 0.00005, // 空気抵抗（小さいほど減速しない）
@@ -72,7 +67,7 @@ io.on("connection", (socket) => {
     console.log("a user connected:", socket.id);
 
     // 新しいプレイヤーを追加
-    const playerBody = Matter.Bodies.circle(WIDTH / 2, HEIGHT - 50, PLAYER_RADIUS, {
+    const playerBody = Matter.Bodies.circle(WIDTH / 2, HEIGHT - 50, constants.PLAYER_RADIUS, {
         // 瞬間移動で力が加わらない
         isStatic: true,
         restitution: 1,
@@ -182,6 +177,6 @@ setInterval(() => {
     });
 }, 1000 / 60);
 
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(constants.PORT, () => {
+    console.log(`Server running on port ${constants.PORT}`);
 });
