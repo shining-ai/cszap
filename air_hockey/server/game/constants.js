@@ -8,4 +8,6 @@ module.exports = {
     GOAL_WIDTH: 200,
     GOAL_DEPTH: 10,
     FRAME_RATE: 60,
+    // プレイヤー移動時の最大速度（サーバ側でクリップ）
+    PLAYER_MAX_SPEED: 10
 };
