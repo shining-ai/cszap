@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const Matter = require("matter-js");
+const constants = require("./game/constants");
 
 // サーバの公開
 const app = express();
@@ -9,13 +10,13 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" } // 身内公開なら簡単にするため全許可
 });
+
 const PORT = process.env.PORT || 3000;
 
-const WIDTH = 600;  // フィールド幅
-const HEIGHT = 400; // フィールド高さ
-const PUCK_RADIUS = 10;  // パック半径
-const PLAYER_RADIUS = 30; // マレットの大きさ
-const WALL_THICK = 200 // 壁の厚み
+const { WIDTH, HEIGHT } = constants; // フィールド幅, 高さ
+const PUCK_RADIUS = constants.PUCK_RADIUS;  // パック半径
+const PLAYER_RADIUS = constants.PLAYER_RADIUS; // マレットの大きさ
+const WALL_THICK = constants.WALL_THICK // 壁の厚み
 
 // エンジンとワールド
 const engine = Matter.Engine.create();
