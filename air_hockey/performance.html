@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket 遅延計測デモ</title>
+</head>
+
+<body>
+    <h1>遅延計測デモ</h1>
+    <button id="send">Ping送信</button>
+    <pre id="log"></pre>
+
+    <script>
+        const log = (msg) => {
+            document.getElementById('log').textContent += msg + '\n';
+        };
+
+        const ws = new WebSocket('ws://localhost:8080');
+
+        ws.addEventListener('open', () => {
+            log('接続成功');
+        });
+
+        // Ping-Pong 計測
+        document.getElementById('send').addEventListener('click', () => {
+            const start = Date.now();
+            ws.send(JSON.stringify({ type: 'ping', time: start }));
+        });
+
+        // onmessage間隔計測
+        let lastReceive = performance.now();
+        const intervals = [];
+
+        ws.addEventListener('message', (event) => {
+            const msg = JSON.parse(event.data);
+
+            // ping応答
+            if (msg.type === 'pong') {
+                const rtt = Date.now() - msg.time;
+                log(`RTT: ${rtt} ms`);
+                return;
+            }
+
+            // 状態更新間隔
+            if (msg.type === 'state') {
+                const now = performance.now();
+                const diff = now - lastReceive;
+                intervals.push(diff);
+                lastReceive = now;
+            }
+        });
+
+        // ヒストグラム的に出力
+        setInterval(() => {
+            if (intervals.length > 0) {
+                const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                const max = Math.max(...intervals);
+                const min = Math.min(...intervals);
+                log(`受信間隔: avg=${avg.toFixed(2)} ms, min=${min.toFixed(2)}, max=${max.toFixed(2)}`);
+                intervals.length = 0;
+            }
+        }, 2000);
+    </script>
+</body>
+
+</html>
