@@ -9,12 +9,34 @@
       color: #eee;
       text-align: center;
       font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .game-container {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0; /* Flexboxのバグ対策 */
     }
     canvas {
       background: #111;
       display: block;
       margin: 0 auto;
       border: 2px solid #555;
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      aspect-ratio: 3/5;
+      max-height: 90vh;
+      object-fit: contain;
     }
     #scoreboard {
       font-size: 20px;
@@ -27,19 +49,48 @@
       0% { background-color: rgba(255, 255, 255, 0.5); }
       100% { background-color: transparent; }
     }
+    .debug-info {
+      font-size: 0.9em;
+      opacity: 0.7;
+      margin-top: 10px;
+    }
+    .debug-info p {
+      margin: 5px 0;
+    }
+    h1 {
+      margin: 10px 0;
+      font-size: calc(1.5rem + 1vmin);
+    }
+    @media (max-height: 600px) {
+      h1 {
+        font-size: 1.2rem;
+        margin: 5px 0;
+      }
+      .debug-info {
+        display: none;
+      }
+      #scoreboard {
+        margin: 5px 0;
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>エアホッケー</h1>
 
-  <div id="scoreboard">
-    🔵 <span id="scoreTop">0</span> - <span id="scoreBottom">0</span> 🔴
+  <div class="game-container">
+    <div id="scoreboard">
+      🔵 <span id="scoreTop">0</span> - <span id="scoreBottom">0</span> 🔴
+    </div>
+
+    <canvas id="game" width="600" height="1000"></canvas>
+
+    <div class="debug-info">
+      <p>自分の座標: <span id="mycoords">未送信</span></p>
+      <p>パックの座標: <span id="puckcoords">未受信</span></p>
+    </div>
   </div>
-
-  <p>自分の座標: <span id="mycoords">未送信</span></p>
-  <p>パックの座標: <span id="puckcoords">未受信</span></p>
-
-  <canvas id="game" width="600" height="400"></canvas>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
@@ -54,26 +105,91 @@
     const scoreTopEl = document.getElementById("scoreTop");
     const scoreBottomEl = document.getElementById("scoreBottom");
 
+    // 基準となるゲームサイズ
+    const BASE_WIDTH = 600;
+    const BASE_HEIGHT = 1000;
+  let scale = 1; // CSSスケール（描画には使わない）
+
+    // キャンバスのリサイズ処理
+    function resizeCanvas() {
+      // ゲームの基準サイズ
+      const GAME_WIDTH = BASE_WIDTH;
+      const GAME_HEIGHT = BASE_HEIGHT;
+      // ヘッダーやスコアボード等の高さを考慮
+      const header = document.querySelector('h1');
+      const scoreboard = document.getElementById('scoreboard');
+      const debug = document.querySelector('.debug-info');
+      let headerH = header ? header.offsetHeight : 0;
+      let scoreH = scoreboard ? scoreboard.offsetHeight : 0;
+      let debugH = debug ? debug.offsetHeight : 0;
+      // 追加の余白
+      const margin = 8;
+      // 利用可能な高さ
+      const availableHeight = window.innerHeight - headerH - scoreH - debugH - margin * 2;
+      const availableWidth = window.innerWidth - margin * 2;
+      // ゲーム全体が必ず収まるスケールを計算
+      const scaleW = availableWidth / GAME_WIDTH;
+      const scaleH = availableHeight / GAME_HEIGHT;
+      scale = Math.min(scaleW, scaleH, 1);
+      // canvas自体は常に基準サイズ
+      canvas.width = GAME_WIDTH;
+      canvas.height = GAME_HEIGHT;
+      // CSSで見た目サイズを調整
+      canvas.style.width = (GAME_WIDTH * scale) + 'px';
+      canvas.style.height = (GAME_HEIGHT * scale) + 'px';
+    }
+
+    // 初期サイズ設定とリサイズイベントの監視
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
     let players = {};
-    let puck = { x: 300, y: 200 };
-    let myPos = { x: 300, y: 350 };
+    let puck = { x: BASE_WIDTH/2, y: BASE_HEIGHT/2 };
+    let myPos = { x: BASE_WIDTH/2, y: BASE_HEIGHT * 0.925 };
     let score = { top: 0, bottom: 0 };
 
     // ---- 定数 ----
-    const GOAL_WIDTH = 200;
-    const GOAL_HEIGHT = 10;
-    const GOAL_OFFSET_X = (canvas.width - GOAL_WIDTH) / 2;
+    const BASE_GOAL_WIDTH = 200;
+    const BASE_GOAL_HEIGHT = 10;
+    const BASE_PADDLE_RADIUS = 30;
+    const BASE_PUCK_RADIUS = 10;
+    
+    // スケールに応じて値を計算
+    const getScaledValue = (baseValue) => baseValue;  // スケールは ctx.scale() で適用
+    const GOAL_WIDTH = getScaledValue(BASE_GOAL_WIDTH);
+    const GOAL_HEIGHT = getScaledValue(BASE_GOAL_HEIGHT);
+    const GOAL_OFFSET_X = (BASE_WIDTH - GOAL_WIDTH) / 2;
 
     // ---- マウス移動送信 ----
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      myPos.x = x;
-      myPos.y = y;
-      myCoordsEl.textContent = `x: ${x.toFixed(1)}, y: ${y.toFixed(1)}`;
-      socket.emit("playerMove", { x, y });
+      // CSSサイズ→実サイズに変換
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      // 座標を基準サイズ内に制限
+      const clampedX = Math.max(30, Math.min(BASE_WIDTH - 30, x));
+      const clampedY = Math.max(30, Math.min(BASE_HEIGHT - 30, y));
+      myPos.x = clampedX;
+      myPos.y = clampedY;
+      myCoordsEl.textContent = `x: ${clampedX.toFixed(1)}, y: ${clampedY.toFixed(1)}`;
+      socket.emit("playerMove", { x: clampedX, y: clampedY });
     });
+
+    // ---- タッチ移動送信 ----
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        const clampedX = Math.max(30, Math.min(BASE_WIDTH - 30, x));
+        const clampedY = Math.max(30, Math.min(BASE_HEIGHT - 30, y));
+        myPos.x = clampedX;
+        myPos.y = clampedY;
+        myCoordsEl.textContent = `x: ${clampedX.toFixed(1)}, y: ${clampedY.toFixed(1)}`;
+        socket.emit("playerMove", { x: clampedX, y: clampedY });
+      }
+    }, { passive: false });
 
     // ---- サーバから状態を受信 ----
     socket.on("state", (data) => {
@@ -105,6 +221,7 @@
 
     // ---- メイン描画 ----
     function draw() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // 中央ライン
@@ -132,17 +249,17 @@
         const p = players[id];
         if (!p) continue;
         if (id === socket.id) {
-          drawCircle(p.x, p.y, 30, "blue");
+          drawCircle(p.x, p.y, BASE_PADDLE_RADIUS, "blue");
         } else {
-          drawCircle(p.x, p.y, 30, "red");
+          drawCircle(p.x, p.y, BASE_PADDLE_RADIUS, "red");
         }
       }
 
       // 自分のマウス位置（レスポンス確認用）
-      drawCircle(myPos.x, myPos.y, 30, "lime");
+      drawCircle(myPos.x, myPos.y, BASE_PADDLE_RADIUS, "lime");
 
       // パック描画
-      drawCircle(puck.x, puck.y, 10, "white");
+      drawCircle(puck.x, puck.y, BASE_PUCK_RADIUS, "white");
       puckCoordsEl.textContent = `x: ${puck.x.toFixed(1)}, y: ${puck.y.toFixed(1)}`;
 
       requestAnimationFrame(draw);
