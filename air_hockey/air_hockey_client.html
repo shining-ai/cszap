@@ -143,10 +143,16 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    let players = {};
-    let puck = { x: BASE_WIDTH/2, y: BASE_HEIGHT/2 };
-    let myPos = { x: BASE_WIDTH/2, y: BASE_HEIGHT * 0.925 };
-    let score = { top: 0, bottom: 0 };
+  let players = {};
+  let puck = { x: BASE_WIDTH/2, y: BASE_HEIGHT/2 };
+  let myPos = { x: BASE_WIDTH/2, y: BASE_HEIGHT * 0.925 };
+  let score = { top: 0, bottom: 0 };
+
+  // パーティクル（火花）管理
+  let particles = [];
+  let lastPuck = { x: puck.x, y: puck.y, vx: 0, vy: 0 };
+  let lastCollision = false;
+  let lastWallCollision = { top: false, bottom: false, left: false, right: false };
 
     // ---- 定数 ----
     const BASE_GOAL_WIDTH = 200;
@@ -194,7 +200,50 @@
     // ---- サーバから状態を受信 ----
     socket.on("state", (data) => {
       players = data.players;
-      puck = data.puck;
+      // パックとパドルの衝突判定
+      let collision = false;
+      let wallCollision = { top: false, bottom: false, left: false, right: false };
+      if (data.puck && data.players) {
+        // パドル衝突
+        for (const id in data.players) {
+          const p = data.players[id];
+          if (!p) continue;
+          const dx = data.puck.x - p.x;
+          const dy = data.puck.y - p.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < BASE_PADDLE_RADIUS + BASE_PUCK_RADIUS) {
+            collision = true;
+            // 衝突した瞬間のみ火花生成
+            if (!lastCollision) {
+              const vx = data.puck.x - lastPuck.x;
+              const vy = data.puck.y - lastPuck.y;
+              spawnParticles(data.puck.x, data.puck.y, vx, vy, 16);
+            }
+            break;
+          }
+        }
+        // 壁衝突判定
+        if (data.puck.y - BASE_PUCK_RADIUS <= 0) wallCollision.top = true;
+        if (data.puck.y + BASE_PUCK_RADIUS >= BASE_HEIGHT) wallCollision.bottom = true;
+        if (data.puck.x - BASE_PUCK_RADIUS <= 0) wallCollision.left = true;
+        if (data.puck.x + BASE_PUCK_RADIUS >= BASE_WIDTH) wallCollision.right = true;
+        // 壁衝突した瞬間のみ火花生成
+        for (const dir of ["top","bottom","left","right"]) {
+          if (wallCollision[dir] && !lastWallCollision[dir]) {
+            const vx = data.puck.x - lastPuck.x;
+            const vy = data.puck.y - lastPuck.y;
+            spawnParticles(data.puck.x, data.puck.y, vx, vy, 12);
+          }
+        }
+      }
+      lastCollision = collision;
+      lastWallCollision = wallCollision;
+      if (data.puck) {
+        const vx = data.puck.x - lastPuck.x;
+        const vy = data.puck.y - lastPuck.y;
+        lastPuck = { x: data.puck.x, y: data.puck.y, vx, vy };
+        puck = data.puck;
+      }
       if (data.score) {
         if (data.score.top !== score.top || data.score.bottom !== score.bottom) {
           flashScore();
@@ -204,6 +253,24 @@
         scoreBottomEl.textContent = data.score.bottom;
       }
     });
+
+    // 火花パーティクル生成
+    function spawnParticles(x, y, vx, vy, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 6 + Math.random() * 8;
+        const dx = Math.cos(angle) * speed + vx * 0.5;
+        const dy = Math.sin(angle) * speed + vy * 0.5;
+        const color = `rgba(${220+Math.random()*35|0},${180+Math.random()*60|0},${40+Math.random()*40|0},1)`;
+        particles.push({
+          x, y,
+          dx, dy,
+          life: 18 + Math.random()*10,
+          color,
+          size: 2 + Math.random()*2
+        });
+      }
+    }
 
     // ---- 得点エフェクト ----
     function flashScore() {
@@ -261,6 +328,23 @@
       // パック描画
       drawCircle(puck.x, puck.y, BASE_PUCK_RADIUS, "white");
       puckCoordsEl.textContent = `x: ${puck.x.toFixed(1)}, y: ${puck.y.toFixed(1)}`;
+
+      // 火花パーティクル描画
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = Math.max(0, pt.life / 24);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        pt.x += pt.dx;
+        pt.y += pt.dy;
+        pt.dx *= 0.92;
+        pt.dy *= 0.92;
+        pt.life--;
+        if (pt.life < 0) particles.splice(i, 1);
+      }
 
       requestAnimationFrame(draw);
     }
