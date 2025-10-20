@@ -14,29 +14,34 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       box-sizing: border-box;
     }
     .game-container {
-      width: 100%;
+      width: 100vw;
+      height: 100vh;
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 0; /* Flexboxのバグ対策 */
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
     canvas {
       background: #111;
       display: block;
-      margin: 0 auto;
+      margin: 0;
       border: 2px solid #555;
-      width: 100%;
-      max-width: 600px;
-      height: auto;
-      aspect-ratio: 3/5;
-      max-height: 90vh;
-      object-fit: contain;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      max-height: none;
+      aspect-ratio: unset;
+      object-fit: fill;
+      box-sizing: border-box;
     }
     #scoreboard {
       font-size: 20px;
@@ -106,15 +111,16 @@
     const scoreBottomEl = document.getElementById("scoreBottom");
 
     // 基準となるゲームサイズ
-    const BASE_WIDTH = 600;
-    const BASE_HEIGHT = 1000;
-  let scale = 1; // CSSスケール（描画には使わない）
+  const BASE_WIDTH = 600;
+  const BASE_HEIGHT = 1000;
+  const WALL_THICKNESS = 16;
+    let scale = 1; // CSSスケール（描画には使わない）
 
     // キャンバスのリサイズ処理
     function resizeCanvas() {
-      // ゲームの基準サイズ
-      const GAME_WIDTH = BASE_WIDTH;
-      const GAME_HEIGHT = BASE_HEIGHT;
+      // プレイ領域＋壁厚み分
+      const GAME_WIDTH = BASE_WIDTH + WALL_THICKNESS * 2;
+      const GAME_HEIGHT = BASE_HEIGHT + WALL_THICKNESS * 2;
       // ヘッダーやスコアボード等の高さを考慮
       const header = document.querySelector('h1');
       const scoreboard = document.getElementById('scoreboard');
@@ -131,7 +137,7 @@
       const scaleW = availableWidth / GAME_WIDTH;
       const scaleH = availableHeight / GAME_HEIGHT;
       scale = Math.min(scaleW, scaleH, 1);
-      // canvas自体は常に基準サイズ
+      // canvas自体は拡張サイズ
       canvas.width = GAME_WIDTH;
       canvas.height = GAME_HEIGHT;
       // CSSで見た目サイズを調整
@@ -170,11 +176,15 @@
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       // CSSサイズ→実サイズに変換
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-      // 座標を基準サイズ内に制限
-      const clampedX = Math.max(30, Math.min(BASE_WIDTH - 30, x));
-      const clampedY = Math.max(30, Math.min(BASE_HEIGHT - 30, y));
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) - WALL_THICKNESS;
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) - WALL_THICKNESS;
+      // パドルの移動範囲（壁＋パドル半径分だけ内側）
+      const minX = BASE_PADDLE_RADIUS;
+      const maxX = BASE_WIDTH - BASE_PADDLE_RADIUS;
+      const minY = BASE_PADDLE_RADIUS;
+      const maxY = BASE_HEIGHT - BASE_PADDLE_RADIUS;
+      const clampedX = Math.max(minX, Math.min(maxX, x));
+      const clampedY = Math.max(minY, Math.min(maxY, y));
       myPos.x = clampedX;
       myPos.y = clampedY;
       myCoordsEl.textContent = `x: ${clampedX.toFixed(1)}, y: ${clampedY.toFixed(1)}`;
@@ -186,10 +196,14 @@
       if (e.touches.length > 0) {
         const rect = canvas.getBoundingClientRect();
         const touch = e.touches[0];
-        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
-        const clampedX = Math.max(30, Math.min(BASE_WIDTH - 30, x));
-        const clampedY = Math.max(30, Math.min(BASE_HEIGHT - 30, y));
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width) - WALL_THICKNESS;
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height) - WALL_THICKNESS;
+        const minX = BASE_PADDLE_RADIUS;
+        const maxX = BASE_WIDTH - BASE_PADDLE_RADIUS;
+        const minY = BASE_PADDLE_RADIUS;
+        const maxY = BASE_HEIGHT - BASE_PADDLE_RADIUS;
+        const clampedX = Math.max(minX, Math.min(maxX, x));
+        const clampedY = Math.max(minY, Math.min(maxY, y));
         myPos.x = clampedX;
         myPos.y = clampedY;
         myCoordsEl.textContent = `x: ${clampedX.toFixed(1)}, y: ${clampedY.toFixed(1)}`;
@@ -222,11 +236,11 @@
             break;
           }
         }
-        // 壁衝突判定
-        if (data.puck.y - BASE_PUCK_RADIUS <= 0) wallCollision.top = true;
-        if (data.puck.y + BASE_PUCK_RADIUS >= BASE_HEIGHT) wallCollision.bottom = true;
-        if (data.puck.x - BASE_PUCK_RADIUS <= 0) wallCollision.left = true;
-        if (data.puck.x + BASE_PUCK_RADIUS >= BASE_WIDTH) wallCollision.right = true;
+        // 壁衝突判定（壁厚み分だけ内側）
+        if (data.puck.y - BASE_PUCK_RADIUS <= WALL_THICKNESS) wallCollision.top = true;
+        if (data.puck.y + BASE_PUCK_RADIUS >= BASE_HEIGHT - WALL_THICKNESS) wallCollision.bottom = true;
+        if (data.puck.x - BASE_PUCK_RADIUS <= WALL_THICKNESS) wallCollision.left = true;
+        if (data.puck.x + BASE_PUCK_RADIUS >= BASE_WIDTH - WALL_THICKNESS) wallCollision.right = true;
         // 壁衝突した瞬間のみ火花生成
         for (const dir of ["top","bottom","left","right"]) {
           if (wallCollision[dir] && !lastWallCollision[dir]) {
@@ -291,49 +305,64 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 中央ライン
-      ctx.strokeStyle = "#333";
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
+  // --- 壁の描画（上下左右・canvas端） ---
+  ctx.save();
+  ctx.fillStyle = '#888';
+  // 上
+  ctx.fillRect(0, 0, canvas.width, WALL_THICKNESS);
+  // 下
+  ctx.fillRect(0, canvas.height - WALL_THICKNESS, canvas.width, WALL_THICKNESS);
+  // 左
+  ctx.fillRect(0, 0, WALL_THICKNESS, canvas.height);
+  // 右
+  ctx.fillRect(canvas.width - WALL_THICKNESS, 0, WALL_THICKNESS, canvas.height);
+  ctx.restore();
 
-      // ゴールエリア
-      ctx.fillStyle = "rgba(0, 100, 255, 0.15)";
-      ctx.fillRect(GOAL_OFFSET_X, 0, GOAL_WIDTH, GOAL_HEIGHT + 20);
-      ctx.fillStyle = "rgba(255, 50, 50, 0.15)";
-      ctx.fillRect(GOAL_OFFSET_X, canvas.height - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+  // 中央ライン
+  ctx.strokeStyle = "#333";
+  ctx.beginPath();
+  ctx.moveTo(WALL_THICKNESS, canvas.height / 2);
+  ctx.lineTo(canvas.width - WALL_THICKNESS, canvas.height / 2);
+  ctx.stroke();
 
-      // ゴール枠線
-      ctx.strokeStyle = "rgba(0, 150, 255, 0.6)";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(GOAL_OFFSET_X, 0, GOAL_WIDTH, GOAL_HEIGHT + 20);
-      ctx.strokeStyle = "rgba(255, 80, 80, 0.6)";
-      ctx.strokeRect(GOAL_OFFSET_X, canvas.height - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+  // ゴールエリア
+  ctx.fillStyle = "rgba(0, 100, 255, 0.15)";
+  ctx.fillRect(GOAL_OFFSET_X + WALL_THICKNESS, WALL_THICKNESS, GOAL_WIDTH, GOAL_HEIGHT + 20);
+  ctx.fillStyle = "rgba(255, 50, 50, 0.15)";
+  ctx.fillRect(GOAL_OFFSET_X + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+
+  // ゴール枠線
+  ctx.strokeStyle = "rgba(0, 150, 255, 0.6)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(GOAL_OFFSET_X + WALL_THICKNESS, WALL_THICKNESS, GOAL_WIDTH, GOAL_HEIGHT + 20);
+  ctx.strokeStyle = "rgba(255, 80, 80, 0.6)";
+  ctx.strokeRect(GOAL_OFFSET_X + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
 
       // プレイヤー描画
       for (const id in players) {
         const p = players[id];
         if (!p) continue;
+        const px = p.x + WALL_THICKNESS;
+        const py = p.y + WALL_THICKNESS;
         if (id === socket.id) {
-          drawCircle(p.x, p.y, BASE_PADDLE_RADIUS, "blue");
+          drawCircle(px, py, BASE_PADDLE_RADIUS, "blue");
         } else {
-          drawCircle(p.x, p.y, BASE_PADDLE_RADIUS, "red");
+          drawCircle(px, py, BASE_PADDLE_RADIUS, "red");
         }
       }
 
       // 自分のマウス位置（レスポンス確認用）
-      drawCircle(myPos.x, myPos.y, BASE_PADDLE_RADIUS, "lime");
+      drawCircle(myPos.x + WALL_THICKNESS, myPos.y + WALL_THICKNESS, BASE_PADDLE_RADIUS, "lime");
 
       // パック描画
-      drawCircle(puck.x, puck.y, BASE_PUCK_RADIUS, "white");
+      drawCircle(puck.x + WALL_THICKNESS, puck.y + WALL_THICKNESS, BASE_PUCK_RADIUS, "white");
       puckCoordsEl.textContent = `x: ${puck.x.toFixed(1)}, y: ${puck.y.toFixed(1)}`;
 
       // 火花パーティクル描画
       for (let i = particles.length - 1; i >= 0; i--) {
         const pt = particles[i];
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.arc(pt.x + WALL_THICKNESS, pt.y + WALL_THICKNESS, pt.size, 0, Math.PI * 2);
         ctx.fillStyle = pt.color;
         ctx.globalAlpha = Math.max(0, pt.life / 24);
         ctx.fill();
