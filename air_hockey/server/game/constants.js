@@ -1,7 +1,7 @@
 module.exports = {
     PORT: process.env.PORT || 3000,
     WIDTH: 600,
-    HEIGHT: 400,
+    HEIGHT: 1000,
     PUCK_RADIUS: 10,
     PLAYER_RADIUS: 30,
     WALL_THICK: 200,
