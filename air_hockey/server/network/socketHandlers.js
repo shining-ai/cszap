@@ -5,21 +5,34 @@ function registerHandlers(io, gameState, gameEngine) {
     io.on("connection", (socket) => {
         console.log("a user connected:", socket.id);
 
-        // 新しいプレイヤーを追加
-        const playerBody = Matter.Bodies.circle(
-            constants.WIDTH / 2,
-            constants.HEIGHT - 50,
-            constants.PLAYER_RADIUS,
-            {
-                // 瞬間移動で力が加わらない
-                isStatic: true,
-                restitution: 1,
-                inertia: Infinity// 回転禁止
-            }
-        );
+        // 初期状態は観戦者として追加（物理オブジェクトなし）
+        gameState.addPlayer(socket.id, null);
 
-        Matter.World.add(gameEngine.world, playerBody);
-        gameState.addPlayer(socket.id, playerBody);
+        // チーム参加イベント
+        socket.on("joinTeam", (data) => {
+            const team = data.team; // "top" または "bottom"
+            if (gameState.canJoinTeam(team)) {
+                // プレイヤーの物理オブジェクトを作成
+                const playerBody = Matter.Bodies.circle(
+                    constants.WIDTH / 2,
+                    constants.HEIGHT - 50,
+                    constants.PLAYER_RADIUS,
+                    {
+                        isStatic: true,
+                        restitution: 1,
+                        inertia: Infinity
+                    }
+                );
+                Matter.World.add(gameEngine.world, playerBody);
+
+                // 既存のプレイヤーデータを更新
+                gameState.removePlayer(socket.id);
+                gameState.addPlayer(socket.id, playerBody, team);
+                socket.emit("teamJoined", { team });
+            } else {
+                socket.emit("teamError", { message: "このチームは満員です" });
+            }
+        });
 
         // クライアントから入力（マウス位置など）
         socket.on("playerMove", (data) => {

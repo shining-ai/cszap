@@ -21,10 +21,26 @@ gameEngine.onCollision((event) => {
         const puckBody = gameEngine.puck;
         if (pair.bodyA === puckBody || pair.bodyB === puckBody) {
             if (pair.bodyA === gameEngine.goals.top || pair.bodyB === gameEngine.goals.top) {
-                gameState.score.bottom += 1;
+                // 青側（上）のゴールに入った場合は赤チーム（bottom）の得点
+                gameState.score.top += 1;
+                // 7点先取の判定
+                if (gameState.score.top >= 7) {
+                    io.emit("gameWin", { winner: "top" });
+                    // スコアリセット
+                    gameState.score.top = 0;
+                    gameState.score.bottom = 0;
+                }
                 gameEngine.resetPuck();
             } else if (pair.bodyA === gameEngine.goals.bottom || pair.bodyB === gameEngine.goals.bottom) {
-                gameState.score.top += 1;
+                // 赤側（下）のゴールに入った場合は青チーム（top）の得点
+                gameState.score.bottom += 1;
+                // 7点先取の判定
+                if (gameState.score.bottom >= 7) {
+                    io.emit("gameWin", { winner: "bottom" });
+                    // スコアリセット
+                    gameState.score.top = 0;
+                    gameState.score.bottom = 0;
+                }
                 gameEngine.resetPuck();
             }
         }
