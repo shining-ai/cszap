@@ -208,16 +208,19 @@
     let lastWallCollision = { top: false, bottom: false, left: false, right: false };
 
     // ---- 定数 ----
-    const BASE_GOAL_WIDTH = 200;
     const BASE_GOAL_HEIGHT = 10;
     const BASE_PADDLE_RADIUS = 45;
     const BASE_PUCK_RADIUS = 20;
 
+    // ゴール幅の状態
+    let goalWidths = {
+        top: 200,    // デフォルト値
+        bottom: 200  // デフォルト値
+    };
+
     // スケールに応じて値を計算
     const getScaledValue = (baseValue) => baseValue;  // スケールは ctx.scale() で適用
-    const GOAL_WIDTH = getScaledValue(BASE_GOAL_WIDTH);
     const GOAL_HEIGHT = getScaledValue(BASE_GOAL_HEIGHT);
-    const GOAL_OFFSET_X = (BASE_WIDTH - GOAL_WIDTH) / 2;
 
     // ---- チーム選択 ----
     document.getElementById("blue-team").addEventListener("click", () => {
@@ -291,6 +294,10 @@
 
     socket.on("state", (data) => {
       players = data.players;
+      // ゴール幅の更新
+      if (data.goalWidth) {
+        goalWidths = data.goalWidth;
+      }
       // パックとパドルの衝突判定
       let collision = false;
       let wallCollision = { top: false, bottom: false, left: false, right: false };
@@ -403,17 +410,24 @@
       ctx.stroke();
 
       // ゴールエリア
+      // 上側（赤チーム用）のゴール
+      const topGoalOffsetX = (BASE_WIDTH - goalWidths.top) / 2;
       ctx.fillStyle = "rgba(255, 50, 50, 0.15)";
-      ctx.fillRect(GOAL_OFFSET_X + WALL_THICKNESS, WALL_THICKNESS, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.fillRect(topGoalOffsetX + WALL_THICKNESS, WALL_THICKNESS, goalWidths.top, GOAL_HEIGHT + 20);
+
+      // 下側（青チーム用）のゴール
+      const bottomGoalOffsetX = (BASE_WIDTH - goalWidths.bottom) / 2;
       ctx.fillStyle = "rgba(0, 100, 255, 0.15)";
-      ctx.fillRect(GOAL_OFFSET_X + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.fillRect(bottomGoalOffsetX + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, goalWidths.bottom, GOAL_HEIGHT + 20);
 
       // ゴール枠線
       ctx.lineWidth = 3;
+      // 上側（赤チーム用）のゴール枠線
       ctx.strokeStyle = "rgba(255, 80, 80, 0.6)";
-      ctx.strokeRect(GOAL_OFFSET_X + WALL_THICKNESS, WALL_THICKNESS, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.strokeRect(topGoalOffsetX + WALL_THICKNESS, WALL_THICKNESS, goalWidths.top, GOAL_HEIGHT + 20);
+      // 下側（青チーム用）のゴール枠線
       ctx.strokeStyle = "rgba(0, 150, 255, 0.6)";
-      ctx.strokeRect(GOAL_OFFSET_X + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, GOAL_WIDTH, GOAL_HEIGHT + 20);
+      ctx.strokeRect(bottomGoalOffsetX + WALL_THICKNESS, canvas.height - WALL_THICKNESS - GOAL_HEIGHT - 20, goalWidths.bottom, GOAL_HEIGHT + 20);
 
       // チームカラーに基づくマレット描画関数
       function drawTeamPaddle(px, py, r, team) {
