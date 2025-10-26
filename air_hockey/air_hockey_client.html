@@ -452,7 +452,7 @@
         ctx.restore();
       }
 
-      // プレイヤー描画
+      // 他プレイヤー描画（サーバー座標）
       for (const id in players) {
         const p = players[id];
         if (!p || id === socket.id) continue; // 自分以外を描画
@@ -462,7 +462,7 @@
         drawTeamPaddle(px, py, r, p.team);
       }
 
-      // 自分のマレット描画（チーム参加時のみ）
+      // 自分のマレットはローカル座標で即時描画
       if (!isSpectator) {
         const px = myPos.x + WALL_THICKNESS;
         const py = myPos.y + WALL_THICKNESS;

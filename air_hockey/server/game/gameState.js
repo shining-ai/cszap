@@ -1,4 +1,7 @@
 class GameState {
+    getTeamSize(team) {
+        return this.teams[team].size;
+    }
     constructor() {
         // players: { socketId: { body: Matter.Body, lastPos: {x,y}, team: string } }
         this.players = {}; // 全プレイヤーの位置を保持
@@ -20,7 +23,7 @@ class GameState {
     }
 
     canJoinTeam(team) {
-        return this.teams[team].size < 2; // 各チーム最大2人まで
+        return true; // チーム人数制限なし
     }
 
     removePlayer(id) {

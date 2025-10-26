@@ -56,16 +56,30 @@ app.get("/", (req, res) => {
 });
 
 // ループ（物理更新 + ブロードキャスト）
-setInterval(() => {
+    setInterval(() => {
     gameEngine.update();
 
-    io.emit("state", {
-        players: gameState.getPlayersState(),
-        puck: { x: gameEngine.puck.position.x, y: gameEngine.puck.position.y },
-        score: gameState.score
-    });
-}, 1000 / constants.FRAME_RATE);
+        // チーム人数に応じて相手のゴール幅を計算
+        const minGoal = 120;
+        const maxGoal = 400;
+        const topSize = gameState.getTeamSize("top");    // 青チーム人数
+        const bottomSize = gameState.getTeamSize("bottom"); // 赤チーム人数
 
-server.listen(constants.PORT, () => {
+        // 青チームが増えると赤チームのゴール（bottom）が広がる
+        const bottomGoalWidth = minGoal + (maxGoal - minGoal) * Math.min(topSize, 4) / 4;
+        // 赤チームが増えると青チームのゴール（top）が広がる
+        const topGoalWidth = minGoal + (maxGoal - minGoal) * Math.min(bottomSize, 4) / 4;
+
+        // ゲームエンジン側のゴール幅を更新
+        gameEngine.updateGoalWidths(topGoalWidth, bottomGoalWidth);
+
+        // 全員に同じゴール幅を送信
+        io.emit("state", {
+            players: gameState.getPlayersState(),
+            puck: { x: gameEngine.puck.position.x, y: gameEngine.puck.position.y },
+            score: gameState.score,
+            goalWidth: { top: topGoalWidth, bottom: bottomGoalWidth }
+        });
+    }, 1000 / 60);server.listen(constants.PORT, () => {
     console.log(`Server running on port ${constants.PORT}`);
 });

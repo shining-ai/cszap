@@ -57,6 +57,22 @@ class GameEngine {
     Matter.World.add(this.world, [this.goals.top, this.goals.bottom]);
   }
 
+  // ゴール幅の更新
+  updateGoalWidths(topWidth, bottomWidth) {
+    const { WIDTH, HEIGHT, GOAL_DEPTH } = constants;
+    
+    // 既存のゴールを削除
+    Matter.World.remove(this.world, [this.goals.top, this.goals.bottom]);
+    
+    // 新しい幅でゴールを再作成
+    this.goals = {
+      top: Matter.Bodies.rectangle(WIDTH / 2, -GOAL_DEPTH / 2, topWidth, GOAL_DEPTH, { isSensor: true, isStatic: true }),
+      bottom: Matter.Bodies.rectangle(WIDTH / 2, HEIGHT + GOAL_DEPTH / 2, bottomWidth, GOAL_DEPTH, { isSensor: true, isStatic: true })
+    };
+    
+    // 新しいゴールを追加
+    Matter.World.add(this.world, [this.goals.top, this.goals.bottom]);
+  }
 
   resetPuck() {
     const { WIDTH, HEIGHT } = constants;
