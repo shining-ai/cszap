@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -10,6 +11,11 @@ const { registerHandlers } = require("./network/socketHandlers");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });// 身内公開なら簡単にするため全許可
+
++// --- ここで client.html を返す ---
+    app.get("/", (req, res) => {
+        res.sendFile(path.join(__dirname, "../air_hockey_client.html"));
+    });
 
 // エンジンとワールド
 const gameEngine = new GameEngine();
