@@ -74,6 +74,38 @@ class GameEngine {
     Matter.World.add(this.world, [this.goals.top, this.goals.bottom]);
   }
 
+  // パックを一時停止（演出中など）
+  freezePuck(durationMs) {
+    const Matter = require('matter-js');
+    if (!this.puck) return;
+    // 停止して物理干渉を避ける
+    Matter.Body.setVelocity(this.puck, { x: 0, y: 0 });
+    Matter.Body.setPosition(this.puck, { x: constants.WIDTH / 2, y: constants.HEIGHT / 2 });
+    Matter.Body.setStatic(this.puck, true);
+    this.puckFrozen = true;
+    if (this._freezeTimeout) clearTimeout(this._freezeTimeout);
+    this._freezeTimeout = setTimeout(() => {
+      // 再開
+      Matter.Body.setStatic(this.puck, false);
+      this.puckFrozen = false;
+      // リセット位置に戻す
+      this.resetPuck();
+      this._freezeTimeout = null;
+    }, durationMs);
+  }
+
+  // 即時解除（任意）
+  unfreezePuck() {
+    const Matter = require('matter-js');
+    if (!this.puck) return;
+    if (this._freezeTimeout) {
+      clearTimeout(this._freezeTimeout);
+      this._freezeTimeout = null;
+    }
+    Matter.Body.setStatic(this.puck, false);
+    this.puckFrozen = false;
+  }
+
   resetPuck() {
     const { WIDTH, HEIGHT } = constants;
     Matter.Body.setPosition(this.puck, { x: WIDTH / 2, y: HEIGHT / 2 });
@@ -82,6 +114,19 @@ class GameEngine {
 
   update() {
     Matter.Engine.update(this.engine, 1000 / constants.FRAME_RATE);
+
+    // パックがフィールド外（壁の外）に出てしまった場合は位置をリセット
+    // 物理的にすり抜けてしまうケースを防ぐための安全措置
+    if (this.puck && this.puck.position) {
+      const { WIDTH, HEIGHT, WALL_THICK } = constants;
+      const px = this.puck.position.x;
+      const py = this.puck.position.y;
+      // 壁の外に出たと判断する閾値（壁厚みを基準にする）
+      if (px < -WALL_THICK || px > WIDTH + WALL_THICK || py < -WALL_THICK || py > HEIGHT + WALL_THICK) {
+        // freeze 中は既に reset がスケジュールされている可能性があるため即リセット
+        this.resetPuck();
+      }
+    }
   }
 
   onCollision(handler) {
